@@ -81,7 +81,6 @@ if [[ "$install_nginx" == "y" || "$install_nginx" == "Y" ]]; then
     if ! command -v nginx &> /dev/null; then
         # NGINX is not installed, install it
         echo "Installing NGINX..."
-        apt update || { echo "Failed to update apt repositories. Exiting."; exit 1; }
         apt install -y nginx || { echo "Failed to install NGINX. Exiting."; exit 1; }
     else
         echo "NGINX is already installed."
