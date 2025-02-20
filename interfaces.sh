@@ -77,10 +77,18 @@ fi
 read -p "Do you want to install NGINX to allow access to Proxmox without port 8006? (y/n): " install_nginx
 
 if [[ "$install_nginx" == "y" || "$install_nginx" == "Y" ]]; then
+    # Check if the Proxmox Enterprise repository is enabled
+    if grep -q "enterprise.proxmox.com" /etc/apt/sources.list.d/pve-enterprise.list; then
+        echo "Proxmox Enterprise repository is enabled. Temporarily disabling it for NGINX installation..."
+        # Disable the Proxmox enterprise repository
+        mv /etc/apt/sources.list.d/pve-enterprise.list /etc/apt/sources.list.d/pve-enterprise.list.disabled
+    fi
+
     # Check if NGINX is already installed
     if ! command -v nginx &> /dev/null; then
         # NGINX is not installed, install it
         echo "Installing NGINX..."
+        apt update || { echo "Failed to update apt repositories. Exiting."; exit 1; }
         apt install -y nginx || { echo "Failed to install NGINX. Exiting."; exit 1; }
     else
         echo "NGINX is already installed."
@@ -114,11 +122,26 @@ EOF
     # Create a symlink for the NGINX configuration
     ln -s /etc/nginx/sites-available/proxmox /etc/nginx/sites-enabled/
 
+    # Check if the symlink was created successfully
+    if [[ -L /etc/nginx/sites-enabled/proxmox ]]; then
+        echo "NGINX site configuration has been linked."
+    else
+        echo "Failed to create symlink for NGINX site configuration. Exiting."
+        exit 1
+    fi
+
     # Reload NGINX to apply the configuration
     echo "Reloading NGINX to apply the configuration..."
     systemctl reload nginx || { echo "Failed to reload NGINX. Exiting."; exit 1; }
 
     echo "NGINX has been installed and configured successfully. You can now access Proxmox using http://$static_ip"
+
+    # Re-enable the Proxmox Enterprise repository if it was disabled
+    if [[ -f /etc/apt/sources.list.d/pve-enterprise.list.disabled ]]; then
+        echo "Re-enabling Proxmox Enterprise repository..."
+        mv /etc/apt/sources.list.d/pve-enterprise.list.disabled /etc/apt/sources.list.d/pve-enterprise.list
+        apt update || { echo "Failed to update apt repositories after re-enabling Proxmox Enterprise. Exiting."; exit 1; }
+    fi
 else
     echo "NGINX installation skipped. The script will now exit."
 fi
