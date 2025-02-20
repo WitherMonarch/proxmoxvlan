@@ -30,11 +30,11 @@ iface vmbr0 inet manual
         bridge-vlan-aware yes
         bridge-vids $vlan_range
 
-# VLAN interface for $vlan_id
 auto vmbr0.$vlan_id
 iface vmbr0.$vlan_id inet static
         address $ip_with_subnet
         gateway $gateway
+
 
 source /etc/network/interfaces.d/*
 EOF
