@@ -21,14 +21,11 @@ if [[ "$configure_network" == "y" || "$configure_network" == "Y" ]]; then
 
     # Create the new network configuration file in the /tmp directory
     cat <<EOF > /tmp/new_interfaces
-# Loopback interface
 auto lo
 iface lo inet loopback
 
-# Physical interface (manual configuration)
 iface $phy_iface inet manual
 
-# Bridge configuration
 auto vmbr0
 iface vmbr0 inet manual
         bridge-ports $phy_iface
@@ -37,13 +34,12 @@ iface vmbr0 inet manual
         bridge-vlan-aware yes
         bridge-vids $vlan_range
 
-# VLAN interface for $vlan_id
 auto vmbr0.$vlan_id
 iface vmbr0.$vlan_id inet static
         address $ip_with_subnet
         gateway $gateway
 
-# Add the following line at the end to source other interfaces configurations
+
 source /etc/network/interfaces.d/*
 EOF
 
@@ -77,18 +73,6 @@ fi
 read -p "Do you want to install NGINX to allow access to Proxmox without port 8006? (y/n): " install_nginx
 
 if [[ "$install_nginx" == "y" || "$install_nginx" == "Y" ]]; then
-    # Comment the line in /etc/apt/sources.list.d/pve-enterprise.list if it exists
-    if grep -q "enterprise.proxmox.com" /etc/apt/sources.list.d/pve-enterprise.list; then
-        echo "Commenting out the Proxmox Enterprise repository line in /etc/apt/sources.list.d/pve-enterprise.list..."
-        sed -i 's/^deb/#deb/' /etc/apt/sources.list.d/pve-enterprise.list
-    fi
-
-    # Comment the line in /etc/apt/sources.list.d/ceph.list if it exists
-    if [[ -f /etc/apt/sources.list.d/ceph.list ]]; then
-        echo "Commenting out the line in /etc/apt/sources.list.d/ceph.list..."
-        sed -i 's/^deb/#deb/' /etc/apt/sources.list.d/ceph.list
-    fi
-
     # Check if NGINX is already installed
     if ! command -v nginx &> /dev/null; then
         # NGINX is not installed, install it
